@@ -7,6 +7,22 @@ public class ProductForm {
     private String name;
     private MultipartFile image;
 
+    private Category category;
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public ProductForm(String name, MultipartFile image, Category category) {
+        this.name = name;
+        this.image = image;
+        this.category = category;
+    }
+
     public ProductForm() {
     }
 

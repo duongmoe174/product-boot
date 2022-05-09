@@ -12,18 +12,97 @@
     <title>Product Spring Boot</title>
 </head>
 <body>
-<form>
-    <table border="1px">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Image</th>
-            <th colspan="2">Action</th>
-        </tr>
-        <tbody id="showProduct">
-        </tbody>
-    </table>
-</form>
+<div style="text-align: center"><h1>Product Manager</h1></div>
+<!--CREATE MODAL-->
+<div>
+    <button data-bs-toggle="modal" data-bs-target="#create_modal" onclick="showCreateProduct()">Create</button>
+    <div class="modal fade" id="create_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" >Create product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label >Name</label>
+                        <input class="form-control" id="createName"
+                               type="text">
+                    </div>
+                    <div class="form-group">
+                        <label >Image</label>
+                        <input class="form-control" id="createImage"
+                               type="file">
+                    </div>
+                    <div class="form-group">
+                        <label >Category</label>
+                        <select id="createCategoryProduct" class="form-select">
+
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer" id="create_footer">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--END CREATE MODAL-->
+
+<!--EDIT MODAL-->
+<div class="modal fade" id="edit_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" >Edit product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label >Name</label>
+                    <input class="form-control" id="editName"
+                           type="text">
+                </div>
+
+                <div class="form-group">
+                    <label>Image</label>
+                    <div id="showImg">
+
+                    </div>
+                    <input class="form-control" id="editImage" type="file">
+                </div>
+                <div class="form-group">
+                    <label >Category</label>
+                    <select id="editCategory" class="form-select">
+
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer" id="edit_footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!--END EDIT MODAL-->
+
+<div>
+    <form>
+        <table border="1px" class="table" style="text-align: center">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Image</th>
+                <th>Category</th>
+                <th colspan="2">Action</th>
+            </tr>
+            <tbody id="showProduct">
+            </tbody>
+        </table>
+    </form>
+</div>
+
+
+
 </body>
 <script>
     function showListProduct() {
@@ -36,13 +115,119 @@
                     content += `<tr><td>${products[i].id}</td>
                     <td>${products[i].name}</td>
                     <td><img style="width: 80px;" src="${'http://localhost:8080/image/'+ products[i].image}"></td>
-                    <td>Edit</td>
-                    <td>Delete</td></tr>`
+                    <td>${products[i].category.name}</td>
+                    <td><button data-bs-toggle="modal" data-bs-target="#edit_modal" onclick="showEditForm(${products[i].id})">Edit</button></td>
+                    <td><a href="${products[i].id}" onclick="deleteProduct(this)"><button>Delete</button></a></td></tr>`
                 }
                 $(`#showProduct`).html(content);
             }
         })
     }
     showListProduct();
+
+    function getCategories () {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/products/categories",
+            success: function (categories) {
+                let result = "";
+                for (let i = 0; i < categories.length; i++) {
+                        result += `<option value="${categories[i].id}">${categories[i].name}</option>`
+                }
+                $(`#createCategoryProduct`).html(result);
+                $(`#editCategoryProduct`).html(result);
+            }
+        })
+    }
+    getCategories();
+
+    function showCreateProduct() {
+        let footer = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="createProduct()">Save</button>`
+        $(`#create_footer`).html(footer);
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/products",
+            success: function () {}
+        })
+    }
+
+    function createProduct() {
+        let name = $(`#createName`).val();
+        let image = $(`#createImage`);
+        let category = $(`#createCategoryProduct`).val();
+        let productForm = new FormData();
+        productForm.append('name', name);
+        productForm.append('image', image.prop('files')[0]);
+        productForm.append('category', category);
+        $.ajax({
+            type: "POST",
+            url: "http://localhost:8080/products",
+            data: productForm,
+            enctype: "multipart/from-data",
+            processData: false,
+            contentType: false,
+            success: function () {
+                alert("created!")
+                $(`#createName`).val("");
+                $(`#createImage`).html("");
+                showListProduct();
+            }
+        })
+        event.preventDefault();
+    }
+    function deleteProduct(element) {
+        let productId = element.getAttribute("href");
+        if (confirm("Yes") === true) {
+            $.ajax({
+                type: "DELETE",
+                url: `http://localhost:8080/products/${productId}`,
+                success: function () {
+                    showListProduct();
+                }
+            })
+            event.preventDefault();
+        } else {
+            window.location="http://localhost:8080/products/list";
+        }
+    }
+
+    function showEditForm(id) {
+        let footer = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="editProduct(${id})">Save</button>`;
+        $(`#edit_footer`).html(footer);
+        $.ajax({
+            type: "GET",
+            url: `http://localhost:8080/products/${id}`,
+            success: function (product) {
+                $(`#editName`).val(product.name);
+                $(`#editCategoryProduct`).val(product.category);
+                let img =`<img src="${'http://localhost:8080/image/'+ product.image}" width="100">`;
+                $(`#showImg`).html(img);
+            }
+        })
+    }
+    function editProduct(id) {
+        let name = $(`#createName`).val();
+        let image = $(`#createImage`);
+        let category = $(`#createCategoryProduct`).val();
+        let productForm = new FormData();
+        productForm.append('name', name);
+        productForm.append('image', image.prop('files')[0]);
+        productForm.append('category', category);
+        $.ajax({
+            type: "POST",
+            url: `http://localhost:8080/products/edit/${id}`,
+            data: productForm,
+            enctype: "multipart/from-data",
+            processData: false,
+            contentType: false,
+            success: function () {
+                alert("edited!")
+                showListProduct();
+            }
+        })
+        event.preventDefault();
+    }
 </script>
 </html>
